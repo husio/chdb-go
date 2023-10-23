@@ -24,8 +24,7 @@ char *Execute(char *query, char *format) {
     // Query - 10 characters + length of query
     localQuery = (char *) malloc(strlen(query)+10);
     if(localQuery == NULL) {
-
-        printf("Out of memmory\n");
+	// Out of memory.
         return NULL;
     }
 
@@ -60,8 +59,7 @@ char *Session(char *query, char *format, char* path) {
     // Query - 10 characters + length of query
     localQuery = (char *) malloc(strlen(query)+10);
     if(localQuery == NULL) {
-
-        printf("Out of memmory\n");
+	// Out of memory.
         return NULL;
     }
 
@@ -85,33 +83,48 @@ char *Session(char *query, char *format, char* path) {
 }
 */
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"fmt"
+	"unsafe"
+)
 
-func Query(str1 string, str2 string) string {
-	if str2 == "" {
-		str2 = "CSV"
+func Query(query string, format string) (string, error) {
+	if format == "" {
+		format = "CSV"
 	}
-	query := C.CString(str1)
-	defer C.free(unsafe.Pointer(query))
-	format := C.CString(str2)
-	defer C.free(unsafe.Pointer(format))
-	resultData := C.Execute(query, format)
-	return C.GoString(resultData)
+	cquery := C.CString(query)
+	defer C.free(unsafe.Pointer(cquery))
+	cformat := C.CString(format)
+	defer C.free(unsafe.Pointer(cformat))
+	result := C.Execute(cquery, cformat)
+	if result == nil {
+		return "", ErrOutOfMemory
+	}
+	return C.GoString(result), nil
 }
 
-func Session(str1 string, str2 string, str3 string) string {
-	if str3 == "" {
-		str3 = "/tmp/"
+func Session(query string, format string, path string) (string, error) {
+	if path == "" {
+		path = "/tmp/"
 	}
-	if str2 == "" {
-		str2 = "CSV"
+	if format == "" {
+		format = "CSV"
 	}
-	query := C.CString(str1)
-	defer C.free(unsafe.Pointer(query))
-	format := C.CString(str2)
-	defer C.free(unsafe.Pointer(format))
-	path := C.CString(str3)
-	defer C.free(unsafe.Pointer(path))
-	resultData := C.Session(query, format, path)
-	return C.GoString(resultData)
+	cquery := C.CString(query)
+	defer C.free(unsafe.Pointer(cquery))
+	cformat := C.CString(format)
+	defer C.free(unsafe.Pointer(cformat))
+	cpath := C.CString(path)
+	defer C.free(unsafe.Pointer(cpath))
+	result := C.Session(cquery, cformat, cpath)
+	if result == nil {
+		return "", ErrOutOfMemory
+	}
+	return C.GoString(result), nil
 }
+
+var (
+	ErrChDB        = errors.New("chdb")
+	ErrOutOfMemory = fmt.Errorf("%w: out of memory", ErrChDB)
+)

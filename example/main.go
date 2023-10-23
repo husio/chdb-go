@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/chdb-io/chdb-go"
 )
@@ -13,11 +14,18 @@ func main() {
 	path := flag.String("path", "", "Table persistence path")
 	flag.Parse()
 
+	var (
+		result string
+		err    error
+	)
 	if len(*path) > 0 {
-		result := chdb.Session(string(*query), string(*format), string(*path))
-		fmt.Println(result)
+		result, err = chdb.Session(*query, *format, *path)
 	} else {
-		result := chdb.Query(string(*query), string(*format))
-		fmt.Println(result)
+		result, err = chdb.Query(*query, *format)
 	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	fmt.Println(result)
 }
