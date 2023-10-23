@@ -1,28 +1,55 @@
 package chdb
 
 import (
-	"strings"
+	"errors"
 	"testing"
 )
 
-var testCases = []struct {
-	query       string
-	expected    string
-	description string
-}{
-	{"SELECT 1", "1", "Basic Select"},
-	{"SELECT 'hello'", "\"hello\"", "Basic Select"},
-}
-
 func TestChdb(t *testing.T) {
-	for _, test := range testCases {
-		observed, err := Query(test.query, "CSV")
-		if err != nil {
-			t.Fatal(err)
-		}
-		observed = strings.Replace(observed, "\n", "", -1)
-		if observed != test.expected {
-			t.Fatalf("%s: %s is not %s", test.query, observed, test.expected)
-		}
+	cases := map[string]struct {
+		Query   string
+		Want    string
+		Path    string
+		Format  string
+		WantErr error
+	}{
+		"select const 1": {
+			Query:  "SELECT 1",
+			Want:   "1\n",
+			Format: "CSV",
+		},
+		"select const string": {
+			Query:  `SELECT 'hello'`,
+			Want:   "\"hello\"\n",
+			Format: "CSV",
+		},
+		"select version": {
+			Query:  `SELECT version()`,
+			Want:   "\"23.6.1.1\"\n",
+			Format: "CSV",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			result, err := Query(tc.Query, tc.Format, tc.Path)
+			if !errors.Is(err, tc.WantErr) {
+				t.Fatalf("Unexpected error: %+v", err)
+			}
+			defer result.Close()
+			if tc.WantErr != nil {
+				return
+			}
+
+			got := result.Bytes()
+			if got == nil {
+				t.Fatal("nil result")
+			}
+			if got := string(got); tc.Want != got {
+				t.Logf("want %q", tc.Want)
+				t.Logf(" got %q", got)
+				t.Fatal("Unexpected result")
+			}
+		})
 	}
 }

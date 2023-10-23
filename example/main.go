@@ -14,18 +14,10 @@ func main() {
 	path := flag.String("path", "", "Table persistence path")
 	flag.Parse()
 
-	var (
-		result string
-		err    error
-	)
-	if len(*path) > 0 {
-		result, err = chdb.Session(*query, *format, *path)
-	} else {
-		result, err = chdb.Query(*query, *format)
-	}
+	result, err := chdb.Query(*query, *format, *path)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Println(result)
+	fmt.Println(string(result))
 }
