@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/chdb-io/chdb-go/chdb"
+	"github.com/chdb-io/chdb-go"
 )
 
 func main() {
